@@ -617,13 +617,6 @@ The Vite configuration is optimized for Home Assistant deployment:
 
 Contributions are welcome!
 
----
-
-## License
-
-MIT License - see [LICENSE](LICENSE) file for details
-
----
 
 ## Credits
 
@@ -636,3 +629,4 @@ Created for controlling **Switcher Touch** boilers in Home Assistant with an int
 ## Support
 
 - **Issues:** [Report issues on GitHub](https://github.com/Pakingster/switcher-donut-card/issues)
+
