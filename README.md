@@ -6,9 +6,9 @@ A custom Lovelace card for Home Assistant to control **Switcher Touch** water he
 
 ## Screenshots
 
-| Stopped | Running |
-|---------|---------|
-| ![Boiler Stopped](images/stopped.png) | ![Boiler Running](images/working.png) |
+| Stopped | Running | Scheduler |
+|---------|---------|-----------|
+| ![Boiler Stopped](images/stopped.png) | ![Boiler Running](images/working.png) | ![Scheduler](images/scheduler.png) |
 
 ---
 
