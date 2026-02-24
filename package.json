@@ -1,0 +1,21 @@
+{
+  "name": "switcher-donut-card",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build"
+  },  
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Custom Home Assistant card for Switcher Touch boilers with donut timer and scheduler",
+  "dependencies": {
+    "lit": "^3.3.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1",
+    "terser": "^5.36.0"
+  }
+}

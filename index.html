@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Switcher Card Dev Environment</title>
+    <style>
+        body {
+            background-color: #bbdefb;
+            display: flex;
+            justify-content: center;
+            padding-top: 50px;
+            font-family: Roboto, sans-serif;
+            margin: 0;
+        }
+
+        :root {
+            --ha-card-background: #ffffff;
+            --ha-card-border-radius: 12px;
+            --ha-card-box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            --primary-text-color: #212121;
+            --secondary-text-color: #727272;
+            --primary-color: #03A9F4;
+            --error-color: #ff6a00;
+            --divider-color: #e0e0e0;
+            --paper-font-body1_-_font-family: 'Roboto', sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+    <switcher-donut-card id="dev-card" style="width: 400px;"></switcher-donut-card>
+    <script type="module">
+        import './src/switcher-donut.ts';
+
+        // MOCK the Home Assistant Icon element for local development
+        class MockHaIcon extends HTMLElement {
+            connectedCallback() {
+                // We use a real SVG here so it respects the CSS "color" and "var(--mdc-icon-size)"
+                this.innerHTML = `
+          <svg viewBox="0 0 24 24" style="width: var(--mdc-icon-size, 24px); height: var(--mdc-icon-size, 24px); fill: currentColor; transition: fill 0.3s ease;">
+            <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M17.5,11C15.5,11 14.5,9 14.5,9C14.5,9 14.5,13.5 11,13.5C7.5,13.5 7.5,9 7.5,9C7.5,13 10.5,15 10.5,15C10.5,15 9.5,16.5 11,18C12.5,19.5 15,19.5 15,19.5C15,19.5 14,18 14.5,16.5C15,15 17.5,13 17.5,11Z"/>
+          </svg>
+        `;
+            }
+        }
+        customElements.define('ha-icon', MockHaIcon);
+
+        // FIXED: Wait for the component to initialize
+        customElements.whenDefined('switcher-donut-card').then(() => {
+            const card = document.getElementById('dev-card');
+
+            card.setConfig({
+                title: 'Boiler',
+                entity: 'switch.mock_switcher',
+                time_entity: 'sensor.mock_time',
+                power_entity: 'sensor.mock_power',
+                current_entity: 'sensor.mock_current',
+                boiler_auto_shutdown: 'sensor.mock_auto_shutdown',
+                icon: 'mdi:water-boiler',
+                icon_size: '32px'
+            });
+            function formatHAString(totalSeconds) {
+                const h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+                const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+                const s = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
+                return `${h}:${m}:${s}`;
+            }
+
+            let boilerInterval;
+            let secondsRemaining = 0;
+
+            let mockHass = {
+                states: {
+                    'switch.mock_switcher': { state: 'off' },
+                    'sensor.mock_time': { state: '00:00:00' },
+                    'sensor.mock_power': { state: '0' },
+                    'sensor.mock_current': { state: '0.0' },
+                    'sensor.mock_auto_shutdown': { state: '01:30:00' }
+                },
+                callService: (domain, service, data) => {
+                    if (service === 'turn_on_with_timer') {
+                        secondsRemaining = data.timer_minutes * 60;
+                        // Fake 2600W and 11.4A when on
+                        updateState('on', formatHAString(secondsRemaining), '2600', '11.4');
+
+                        clearInterval(boilerInterval);
+                        boilerInterval = setInterval(() => {
+                            secondsRemaining -= 1;
+                            if (secondsRemaining <= 0) {
+                                clearInterval(boilerInterval);
+                                updateState('off', '00:00:00', '0', '0.0');
+                            } else {
+                                // Slight fluctuation in power for realism
+                                const fakePower = Math.floor(2550 + Math.random() * 100).toString();
+                                const fakeCurrent = (11.2 + Math.random() * 0.4).toFixed(1);
+                                updateState('on', formatHAString(secondsRemaining), fakePower, fakeCurrent);
+                            }
+                        }, 1000);
+
+                    } else if (service === 'turn_on') {
+                        clearInterval(boilerInterval);
+                        updateState('on', 'unavailable', '2600', '11.4');
+                    } else if (service === 'turn_off') {
+                        clearInterval(boilerInterval);
+                        updateState('off', '00:00:00', '0', '0.0');
+                    } else if (service === 'create') {
+                        // Mock persistent_notification.create
+                        console.log('Notification:', data.title, '-', data.message);
+                    } else if (service === 'notify') {
+                        // Mock notify.notify (push notification)
+                        console.log('Push Notification:', data.title, '-', data.message);
+                    }
+                }
+            };
+
+            // Updated to accept power and current
+            function updateState(switchState, timeString, powerState = '0', currentState = '0.0') {
+                mockHass = {
+                    ...mockHass,
+                    states: {
+                        ...mockHass.states, // Keep existing states like auto_shutdown
+                        'switch.mock_switcher': { state: switchState },
+                        'sensor.mock_time': { state: timeString },
+                        'sensor.mock_power': { state: powerState },
+                        'sensor.mock_current': { state: currentState }
+                    }
+                };
+                card.hass = mockHass;
+            }
+
+            card.hass = mockHass;
+        });
+    </script>
+</body>
+
+</html>
